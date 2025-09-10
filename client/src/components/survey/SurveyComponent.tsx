@@ -82,7 +82,7 @@ const SurveyComponent = ({ onLogout }: LogoutProps) => {
 				const errData = await response.json();
 				alert(
 					errData.message ||
-						'Invalid referral code. Please check again.'
+					'Invalid referral code. Please check again.'
 				);
 				setReferredByCode(null);
 				setIsReferralValid(false);
@@ -140,10 +140,57 @@ const SurveyComponent = ({ onLogout }: LogoutProps) => {
 						}
 					]
 				},
+				// Consent Page
+				{
+					name: 'consent_page',
+					title: 'Consent Confirmation',
+					elements: [
+						{
+							type: 'html',
+							name: 'consent-instructions',
+							html: '<div><strong>Please ask the respondent if they are above the age of 18. The survey will end if they are not at least 18 years old.</strong></div>'
+						},
+						{
+							type: 'radiogroup',
+							name: 'age_for_consent',
+							title: 'Is the respondent at least 18?',
+							choices: ['Yes', 'No'],
+							isRequired: true
+						},
+						{
+							type: 'html',
+							name: 'consent-note',
+							html: `<div><strong>Please read the following consent information out loud to the respondent and have them orally give their consent to you:</strong></div>
+        <p>Participation in research is voluntary. The decision to participate, or not participate, is entirely up to you. You have the right to decline to participate in, or withdraw from, this study at any point without penalty or loss of benefits to which you already receive or to which you are entitled.</p>
+        <p>This study has been explained to me and I understand. I volunteer to take part in this research. I have had the opportunity to ask questions. If I have questions later about the research, or if I have been harmed by participating in this study, I can contact one of the researchers listed on the first page of this consent form. If I have questions about my rights as a research subject, I can call the Human Subjects Division at (206) 543-0098. I will receive a copy of this consent form.</p>
+        <p><strong>Let the respondent know that the survey will end here if they do not give consent.</strong></p>`,
+							visibleIf: "{age_for_consent} = 'Yes'"
+						},
+						{
+							type: 'radiogroup',
+							name: 'consent_given',
+							title: 'Did the subject orally consent to participate?',
+							choices: ['Yes', 'No'],
+							isRequired: true,
+							visibleIf: "{age_for_consent} = 'Yes'"
+						}
+					],
+					triggers: [
+						{
+							type: 'complete',
+							expression: "{age_for_consent} = 'No'"
+						},
+						{
+							type: 'complete',
+							expression: "{consent_given} = 'No'"
+						}
+					]
+				},
 				// Pre-Screening Respondent
 				{
 					name: 'pre-screen-2',
 					title: 'Pre-Screening Questions - Respondent',
+					visibleIf: "{consent_given} = 'Yes'",
 					elements: [
 						{
 							type: 'html',
@@ -187,51 +234,6 @@ const SurveyComponent = ({ onLogout }: LogoutProps) => {
 							title: 'Can we message the respondent regarding survey results?',
 							choices: ['Yes', 'No'],
 							isRequired: true
-						}
-					]
-				},
-				{
-					name: 'consent_page',
-					title: 'Consent Confirmation',
-					elements: [
-						{
-							type: 'html',
-							name: 'consent-instructions',
-							html: '<div><strong>Please ask the respondent if they are above the age of 18. The survey will end if they are not at least 18 years old.</strong></div>'
-						},
-						{
-							type: 'radiogroup',
-							name: 'age_for_consent',
-							title: 'Is the respondent at least 18?',
-							choices: ['Yes', 'No'],
-							isRequired: true
-						},
-						{
-							type: 'html',
-							name: 'consent-note',
-							html: `<div><strong>Please read the following consent information out loud to the respondent and have them orally give their consent to you:</strong></div>
-        <p>Participation in research is voluntary. The decision to participate, or not participate, is entirely up to you. You have the right to decline to participate in, or withdraw from, this study at any point without penalty or loss of benefits to which you already receive or to which you are entitled.</p>
-        <p>This study has been explained to me and I understand. I volunteer to take part in this research. I have had the opportunity to ask questions. If I have questions later about the research, or if I have been harmed by participating in this study, I can contact one of the researchers listed on the first page of this consent form. If I have questions about my rights as a research subject, I can call the Human Subjects Division at (206) 543-0098. I will receive a copy of this consent form.</p>
-        <p><strong>Let the respondent know that the survey will end here if they do not give consent.</strong></p>`,
-							visibleIf: "{age_for_consent} = 'Yes'"
-						},
-						{
-							type: 'radiogroup',
-							name: 'consent_given',
-							title: 'Did the subject orally consent to participate?',
-							choices: ['Yes', 'No'],
-							isRequired: true,
-							visibleIf: "{age_for_consent} = 'Yes'"
-						}
-					],
-					triggers: [
-						{
-							type: 'complete',
-							expression: "{age_for_consent} = 'No'"
-						},
-						{
-							type: 'complete',
-							expression: "{consent_given} = 'No'"
 						}
 					]
 				},
@@ -926,9 +928,199 @@ const SurveyComponent = ({ onLogout }: LogoutProps) => {
 							]
 						},
 						{
-							type: 'text',
-							name: 'last_stable_loc',
-							title: 'Where did you live the last time you had stable housing such as an apartment or a house?'
+							type: 'dropdown',
+							name: 'last_stable_loc', 
+							title: 'Where did you live the last time you had stable housing such as an apartment or a house?',
+							choices: [
+								{ value: 'king', text: 'King County' },
+								{ value: 'wa', text: 'Washington State County (outside of King County)' },
+								{ value: 'us', text: 'United States (state outside of Washington State)' },
+								'Outside the United States',
+								'Choose not to answer',
+								'Do not know'
+							]
+						},
+						// Note: (Unincorporated) may confuse users
+						{
+							type: 'dropdown',
+							name: 'last_stable_loc_king', 
+							title: 'Please specify:',
+							visibleIf: "{last_stable_loc} = 'king'",
+							choices: [
+								'Algona',
+								'Auburn',
+								'Bear Creek/Sammamish (Unincorporated)',
+								'Beaux Arts',
+								'Bellevue',
+								'Black Diamond',
+								'Bothell',
+								'Burien',
+								'Carnation',
+								'Clyde Hill',
+								'Covington',
+								'Data not collected', // ? user may be confused by this option
+								'Des Moines',
+								'Duvall',
+								'East Federal Way (Unincorporated)',
+								'East Renton (Unincorporated)',
+								'Enumclaw',
+								'Fairwood (Unincorporated)',
+								'Federal Way',
+								'Four Creeks/Tiger Mountain (Unincorporated)',
+								'Hunts Point',
+								'Issaquah',
+								'Kenmore',
+								'Kent',
+								'Kirkland',
+								'Lake Forest Park',
+								'Maple Valley',
+								'Medina',
+								'Mercer Island',
+								'Milton',
+								'Newcastle',
+								'Normandy Park',
+								'North Bend',
+								'North Highline (Unincorporated)',
+								'Pacific',
+								'Renton',
+								'Sammamish',
+								'Sea Tac',
+								'Seattle',
+								'Shoreline',
+								'Skykomish',
+								'Snoqualmie',
+								'Redmond',
+								'Snoqualmie Valley/Northeast',
+								'King County (Unincorporated)',
+								'Southeast King County (Unincorporated)',
+								'Tukwila',
+								'Vashon/Maury Island', // unincorporated area
+								'West Hill (Unincorporated)',
+								'Woodinville',
+								'Yarrow Point',
+								'Other / Unincorporated King County'
+							]
+						},
+						{
+							type: 'dropdown',
+							name: 'last_stable_loc_unincorporated',
+							title: 'Specify Other:',
+							showOtherItem: true,
+							visibleIf: "{last_stable_loc_king} = 'Other / Unincorporated King County'",
+							choices: [
+								'Bryn Mawr Skyway',
+								'White Center',
+								'South Park',
+								'Fairwood',
+								'East Renton Highlands',
+								'Cottage Lake',
+								'Fall City',
+								'Hobart',
+								'Union Hill'
+							]
+						},
+						{
+							type: 'dropdown',
+							name: 'last_stable_loc_wa', 
+							title: 'Please specify:',
+							visibleIf: "{last_stable_loc} = 'wa'",
+							choices: [
+								'Adams',
+								'Asotin',
+								'Benton',
+								'Chelan',
+								'Clallam',
+								'Clark',
+								'Columbia',
+								'Cowlitz',
+								'Douglas',
+								'Ferry',
+								'Franklin',
+								'Garfield',
+								'Grant',
+								'Grays Harbor',
+								'Island',
+								'Jefferson',
+								'Kitsap',
+								'Kittititas',
+								'Klickitat',
+								'Lewis',
+								'Lincoln',
+								'Mason',
+								'Okanogan',
+								'Pacific',
+								'Pend Orellie',
+								'Pierce',
+								'San Juan (County)',
+								'Skagit',
+								'Skamania',
+								'Snohomish',
+								'Spokane',
+								'Stevens',
+								'Thurston',
+								'Wahkiakum',
+								'Walla Walla (County)',
+								'Whatcom',
+								'Whitman',
+								'Yakima (County)'
+							]
+						},
+						{
+							type: 'dropdown',
+							name: 'last_stable_loc_us',
+							title: 'Please specify which state:',
+							visibleIf: "{last_stable_loc} = 'us'",
+							choices: [
+								'Alabama',
+								'Alaska',
+								'Arizona',
+								'Arkansas',
+								'California',
+								'Colorado',
+								'Connecticut',
+								'Delaware',
+								'Florida',
+								'Georgia',
+								'Hawaii',
+								'Idaho',
+								'Illinois',
+								'Indiana',
+								'Iowa',
+								'Kansas',
+								'Kentucky',
+								'Louisiana',
+								'Maine',
+								'Maryland',
+								'Massachusetts',
+								'Michigan',
+								'Minnesota',
+								'Mississippi',
+								'Missouri',
+								'Montana',
+								'Nebraska',
+								'Nevada',
+								'New Hampshire',
+								'New Jersey',
+								'New Mexico',
+								'New York',
+								'North Carolina',
+								'North Dakota',
+								'Ohio',
+								'Oklahoma',
+								'Oregon',
+								'Pennsylvania',
+								'Rhode Island',
+								'South Carolina',
+								'South Dakota',
+								'Tennessee',
+								'Texas',
+								'Utah',
+								'Vermont',
+								'Virginia',
+								'West Virginia',
+								'Wisconsin',
+								'Wyoming'
+							]
 						},
 						{
 							type: 'dropdown',
